@@ -1,67 +1,82 @@
+import threading
 import socket
 import time
+import json
 
-# not working
+def join(channel):
+    global irc
 
-class IRCClient:
-    irc_sock = None # socket object
+    irc.send(f"JOIN {channel}\r\n".encode())
 
-    # client info
-    name = ""
-    nick = ""
+def send(channel, msg):
+    global irc
 
-    # server info
-    host = ""
-    port = 0
+    irc.send(f"PRIVMSG {channel} {msg}\r\n".encode())
 
-    def __init__(self, config:dict):
-        self.host = config["server"]["host"]
-        self.port = config["server"]["port"]
+def get_response(channel):
+    global irc
 
-        self.name = config["bot"]["name"]
-        self.nick = config["bot"]["nick"]
+    resp = irc.recv(2048).decode()
 
-    def connect(self):
-        # preparing headers
-        some_header = "CAP LS\r\n" # dont know what is this doing
-        nick_header = f"NICK {self.nick}\r\n"
-        user_header = f"USER {self.nick} {self.nick} 127.0.0.1 :{self.name}\r\n"
+    if "PRIVMSG" in resp:
+        msg_section = resp.split("PRIVMSG")[1]
 
-        # setting socket
-        self.irc_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.irc_sock.connect((self.host, self.port))
+        msg = msg_section.replace(channel + " :", "")
 
-        self.irc_sock.send(some_header.encode())
-        self.irc_sock.send(nick_header.encode())
-        self.irc_sock.send(user_header.encode())
+        return msg
 
-        time.sleep(15)
+    else:
+        return None
 
-        print(self.irc_sock.recv(8192))
+def ping(host):
+    global irc
 
-        self.ping()
+    content = f"PING :{host}\r\n"
 
-    def ping(self):
-        self.irc_sock.send(f"PING {self.host}\r\n'".encode())
-        print(self.irc_sock.recv(2048))
+    irc.send(content.encode())
 
-    def join(self, channel:str):
-        command = f"JOIN {channel}\r\n"
-        print(command)
+def ping_loop(conn:socket.socket, host:str):
+    while True:
+        packet = f"PING :{host}\r\n"
+        irc.send(packet.encode())
+        data = irc.recv(1024)
 
-        s.send("JOIN #main\r\n".encode())
+        time.sleep(30)
 
-        self.irc_sock.send(command.encode())
-        print(self.irc_sock.recv(2048))
+config = json.load(open("config.json"))["irc"]
 
-    def send(self, is_user:bool, receiver:str, msg:str):
-        processed_reciever = "#"
+server_data = (config["server"]["host"], config["server"]["port"])
 
-        if not "#" in receiver and not is_user:
-            processed_reciever += receiver
+nick = config["bot"]["nick"]
+name = config["bot"]["name"]
+channel = config["bot"]["channel"]
 
-        else:
-            processed_reciever = receiver
+irc = socket.socket()
+irc.connect(server_data)
 
-        self.irc_sock.send(f"PRIVMSG {processed_reciever} {msg}\r\n".encode())
-        print(self.irc_sock.recv(2048))
+print("[*] Sending headers")
+irc.send("CAP LS\r\n".encode())
+irc.send(f"NICK {nick}\r\n".encode())
+irc.send(f"USER {nick} {nick} 127.0.0.1 :{name}\r\n".encode())
+print("[*] Headers sent, waiting 15 secs")
+
+time.sleep(15)
+
+# connecting and sending "hello"
+# change to listening for messages and sending them to discord
+
+print("[*] Starting connection keeper thread")
+ping_thread = threading.Thread(target=ping_loop, args=(irc, config["server"]["host"]))
+ping_thread.start()
+
+print(f"[*] Joining channel {channel}")
+irc.send(f"JOIN {channel}\r\n".encode())
+
+print(f"[*] Starting listening for messages")
+
+while True:
+    response = get_response(channel)
+
+    if response:
+        ## sending message to discord
+        print(response)
