@@ -1,0 +1,13 @@
+{
+    "irc":{
+        "server":{
+            "host":"127.0.0.1",
+            "port":6667
+        },
+        "bot":{
+            "name":"Discord integration",
+            "nick":"BOT",
+            "channel":"#main"
+        }
+    }
+}
