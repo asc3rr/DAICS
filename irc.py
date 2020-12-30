@@ -45,22 +45,19 @@ def ping(host):
 
     irc.send(content.encode())
 
-def ping_loop(conn:socket.socket, host:str):
+def listen_for_packages(conn:socket.socket, host:str):
     while True:
-        packet = f"PING :{host}\r\n"
-        irc.send(packet.encode())
-        data = irc.recv(1024).decode()
-        
-        time.sleep(30)
+        resp = irc.recv(2048).decode()
 
-def listen_for_messages(conn:socket.socket):
-    while True:
-        response = irc.recv(2048).decode()
-
-        if "PRIVMSG" in response:
-            author, msg = extract_msg(response)
-
+        if "PRIVMSG" in resp:
+            author, msg = extract_msg(resp)
             sender.send(author, msg)
+
+        elif "PING" in resp:
+            resp_packet = f"PONG :{host} {host}\r\n"
+
+            irc.send(resp_packet.encode())
+
 
 config = json.load(open("config.json"))["irc"]
 
@@ -84,15 +81,13 @@ time.sleep(15)
 print("[*] Initializing discord sender")
 sender.init()
 
-print("[*] Starting connection keeper thread")
-ping_thread = threading.Thread(target=ping_loop, args=(irc, config["server"]["host"]))
-ping_thread.start()
-
 print(f"[*] Joining channel {channel}")
 irc.send(f"JOIN {channel}\r\n".encode())
 
-print(f"[*] Listening for messages")
-message_thread = threading.Thread(target=listen_for_messages, args=(irc,))
-message_thread.start()
+time.sleep(2.5)
+
+print("[*] Starting packet handler thread")
+packet_thread = threading.Thread(target=listen_for_packages, args=(irc, config["server"]["host"]))
+packet_thread.start()
 
 print("[*] All threads are running")
