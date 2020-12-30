@@ -1,0 +1,17 @@
+{
+    "irc":{
+        "server":{
+            "host":"<address>",
+            "port":0
+        },
+        "bot":{
+            "name":"<bot name>",
+            "nick":"<bot nick>",
+            "channel":"<channel>"
+        }
+    },
+    "discord":{
+        "webhook":"<webhook_url>",
+        "token":"<bot_token>"
+    }
+}

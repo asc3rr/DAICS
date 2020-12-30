@@ -1,19 +1,20 @@
-import socket
+import discord
 import time
+import json
+import irc
 
-# working
+config = json.load(open("config.json"))["discord"]
 
-s = socket.socket()
-s.connect(("127.0.0.1", 6667))
+client = discord.Client()
 
-s.send("CAP LS\r\n".encode())
-s.send("NICK asc3rr\r\n".encode())
-s.send("USER asc3rr asc3rr 127.0.0.1 :Borys\r\n".encode())
+@client.event
+async def on_message(msg):
+    author = str(msg.author)
+    content = str(msg.content)
 
-time.sleep(15)
-print(s.recv(4096).decode())
+    if author.split("#")[-1] != "0000":
+        msg_to_irc = f"<{author}> {content}"
 
-s.send("JOIN #main\r\n".encode())
-print(s.recv(4096).decode())
-s.send("PRIVMSG #main hello\r\n".encode())
-print(s.recv(4096).decode())
+        irc.send(msg_to_irc)
+
+client.run(config["token"])
