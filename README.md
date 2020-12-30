@@ -35,3 +35,8 @@ There is description of configuration example
 
 ## NOTICE
 Bot supports only **one** discord channel and **one** IRC channel
+
+## Bugs
+| status | bug_description |
+| --------- | --------------- |
+| unknow    | disconnecting
