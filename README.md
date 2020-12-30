@@ -1,3 +1,2 @@
-# discord-irc
-
-Discord and IRC channel synchronization.
+# DAICS
+Discord And IRC Channel Synchronization.
