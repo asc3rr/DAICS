@@ -37,6 +37,6 @@ There is description of configuration example
 Bot supports only **one** discord channel and **one** IRC channel
 
 ## Bugs
-| status | bug_description |
+|    status | bug_description |
 | --------- | --------------- |
-| unknow    | disconnecting
+| fixed     | disconnecting   |
